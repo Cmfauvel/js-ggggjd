@@ -4,5 +4,8 @@
   "private": true,
   "dependencies": {
     "moment": "^2.29.4"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
   }
 }

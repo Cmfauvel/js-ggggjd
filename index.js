@@ -1,12 +1,10 @@
+#!/usr/bin/env node
 // Write Javascript code!
 var moment = require('moment'); // require
-const appDiv = document.getElementById('app');
-appDiv.innerHTML = `<h1>JS Starter</h1>`;
 
 const workingDay = (date) => {
   let days = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
   const day = days[date.day()];
-  console.log(day);
   if (day !== 'SA' && day !== 'SU') {
     return true;
   } else {
@@ -18,11 +16,9 @@ const getEtpByDateAndPerson = (contentieuxId, now, listUsers) => {
   let etp = 0;
   listUsers.forEach((user) => {
     if (user.contentieux === contentieuxId) {
-      console.log(user);
-      etp++;
+      etp += user.etp;
     }
   });
-
   const situation = now;
   return { etp, situation };
 };
@@ -34,13 +30,7 @@ const getETPMagistrat = (
   dateStart,
   dateStop
 ) => {
-  console.log('DATA === ', contentieuxId, dateStart, dateStop);
   const list = new Object();
-
-  categories = [
-    { id: 1, label: 'magistrat' },
-    { id: 2, label: 'greffier' },
-  ];
 
   categories.map((c) => {
     list[c.id] = new Object({
@@ -51,12 +41,10 @@ const getETPMagistrat = (
     });
   });
 
-  let now = moment(dateStart);
-  const end = moment(dateStop);
+  let now = moment(dateStart, "DD/MM/YYYY");
+  const end = moment(dateStop, "DD/MM/YYYY");
 
   let nbDay = 0;
-
-  console.log('dates === ', now, dateStop, end);
 
   do {
     // only working day
@@ -71,17 +59,13 @@ const getETPMagistrat = (
         now,
         listUsers
       ); // retourne la sommes des situation de la liste des personnes à un contentieux id donnée et une date donnée
-      console.log('result of getEtpByDateAndPerson === ', etp, situation);
 
       if (situation && etp !== null) {
-        console.log(etp);
-        list[1].etpt += etp;
+        list['1'].etpt += etp;
       }
     }
-    console.log(now <= end);
     now = moment(now).add(1, 'days');
-    console.log('NOW +1 ===', now);
-  } while (moment(dateStart).isBefore(dateStop));
+  } while (now <= end - 1);
 
   if (nbDay === 0) {
     nbDay = -1;
@@ -90,10 +74,9 @@ const getETPMagistrat = (
   // format render
 
   for (const property in list) {
-    console.log('property', property, list[property].etpt, nbDay);
+    const filteredUsers = listUsers.filter(u => !u.contentieux.includes(contentieuxId))
     list[property].reelEtp = list[property].etpt / nbDay;
-
-    list[property].indispo = list[property].indispo / nbDay;
+    list[property].indispo = list[property].etpt !== 0 ? nbDay * filteredUsers.length / list[property].etpt : nbDay * listUsers.length;
   }
 
   return list;
@@ -142,48 +125,27 @@ const listUsers = [
   },
 ];
 
-let list = getETPMagistrat(listUsers, 'c1', [], '2022-01-01', '2022-01-31');
+const categories = [
+  { id: 1, label: 'magistrat' },
+  { id: 2, label: 'greffier' },
+];
+
+
+let list = getETPMagistrat(listUsers, 'c1', categories, '01/01/2022', '31/01/2022');
 console.log('1 ----------------------------------');
 console.log(list);
 
-list = {
-  1: {
-    etpt: 1,
-    indispo: 0,
-    reelEtp: 0,
-    id: 1,
-    label: 'magistrat',
-  },
-  2: {
-    etpt: 0,
-    indispo: 0,
-    reelEtp: 0,
-    id: 2,
-    label: 'greffier',
-  },
-};
 
-list = getETPMagistrat(listUsers, [], 'c1', '2022-01-01', '2022-12-31');
+list = getETPMagistrat(listUsers, 'c1', categories, '01/01/2022', '31/12/2021');
 console.log('2 ----------------------------------');
 console.log(list);
 
-list = getETPMagistrat(listUsers, [], 'c1', '01/01/2022', '31/12/2022');
-console.log('3 ----------------------------------');
-console.log(list);
 
-/* list = {
-  1: {
-    etpt: 0,
-    indispo: 0,
-    reelEtp: 0,
-    id: 1,
-    label: 'magistrat',
-  },
-  2: {
-    etpt: 0,
-    indispo: 0,
-    reelEtp: 0,
-    id: 2,
-    label: 'greffier',
-  },
-};  */
+result1 = {
+  '1': { etpt: 45, indispo: 0, reelEtp: 2.25, id: 1, label: 'magistrat' },
+  '2': { etpt: 0, indispo: 0, reelEtp: 0, id: 2, label: 'greffier' }
+}
+result2 = {
+  '1': { etpt: 0, indispo: 0, reelEtp: -0, id: 1, label: 'magistrat' },
+  '2': { etpt: 0, indispo: 0, reelEtp: -0, id: 2, label: 'greffier' }
+}
